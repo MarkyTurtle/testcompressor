@@ -22,7 +22,7 @@ namespace TestProject
             var compressor = new Compressor(deltaStrategy);
             var bytes = new byte[] { 32, 64 };
 
-            var result = compressor.Compress(bytes);
+            var (result, originalLength) = compressor.Compress(bytes);
 
             Assert.AreEqual(32,result[0]);
             Assert.AreEqual(6<<4,result[1]);
@@ -37,7 +37,7 @@ namespace TestProject
             var compressor = new Compressor(deltaStrategy);
             var bytes = new byte[] { 32, 64, 96 };
 
-            var result = compressor.Compress(bytes);
+            var (result, originalLength) = compressor.Compress(bytes);
 
             Assert.AreEqual(32,result[0]);
             Assert.AreEqual(6<<4|6,result[1]);
@@ -51,10 +51,24 @@ namespace TestProject
             var compressor = new Compressor(deltaStrategy);
             var bytes = new byte[] { 0,20,41,59,77,91,103,112,118,120,118,112,103,91,77,59,41,20,0,236,215,196,179,165,153,144,138,136,138,144,153,165,179,196,215,236 };
 
-            var result = compressor.Compress(bytes);
+            var (compressedResult,originalLength) = compressor.Compress(bytes);
+            Console.WriteLine("Compressed Result");
+            Console.WriteLine(string.Join(",", compressedResult.Select(x => x.ToString("X2"))));
 
-            // Generate hex output below
-            Console.WriteLine(string.Join(",",result.Select(x => x.ToString("X2"))));
+            var decompressedResult = compressor.Decompress(compressedResult, originalLength-1);
+            Console.WriteLine("Decompressed Result");
+            Console.WriteLine(string.Join(",", decompressedResult.Select(x => x.ToString("X2"))));
+
+            Console.WriteLine("Original Data");
+            Console.WriteLine(string.Join(",", bytes.Select(x => x.ToString("X2"))));
+
+            var differences = new List<byte>();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                differences.Add((byte)(bytes[i] - decompressedResult[i]));
+            }
+            Console.WriteLine("Differences");
+            Console.WriteLine(string.Join(",", differences.Select(x => x.ToString("X2"))));
 
             // Deltas Offsets (initial value = 00)
             // 55,55,55,53,3E,CC,BB,BB,AC,AC,AD,BB,EC,02,34,45,55,50

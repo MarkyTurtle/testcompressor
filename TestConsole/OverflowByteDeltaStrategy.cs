@@ -16,6 +16,11 @@ namespace TestConsole
             _deltaValues = deltaValues;
         }
 
+        public byte DeltaValue(int deltaIndex)
+        {
+            return _deltaValues[deltaIndex];
+        }
+
         /// <summary>
         /// 
         /// </summary>

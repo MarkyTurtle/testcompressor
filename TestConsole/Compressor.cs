@@ -17,7 +17,43 @@ namespace TestConsole
         }
 
 
-        public byte[] Compress(byte[] data)
+        public byte[] Decompress(byte[] data, int numberOfDeltas)
+        {
+            List<byte> decompressedBytes = new List<byte>();
+
+            byte accumulatedValue = data[0];
+            decompressedBytes.Add(accumulatedValue);
+            int deltaCount = 0;
+            for (int i = 1; i < data.Length; i++)
+            {
+                byte deltaIdx;
+                byte deltas = data[i];
+
+                deltaIdx = (byte)((deltas & 0xf0) >> 4);
+                accumulatedValue = (byte)(accumulatedValue + _deltaStrategy.DeltaValue(deltaIdx));
+                decompressedBytes.Add(accumulatedValue);
+                deltaCount++;
+
+                if (deltaCount < numberOfDeltas-1)
+                {
+                    deltaIdx = (byte)(deltas & 0x0f);
+                    accumulatedValue = (byte)(accumulatedValue + _deltaStrategy.DeltaValue(deltaIdx));
+                    decompressedBytes.Add(accumulatedValue);
+                    deltaCount++;
+                }
+            }
+
+            return decompressedBytes.ToArray();
+
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns>Compressed byte array, original data length</returns>
+        public (byte[],int) Compress(byte[] data)
         {
             // data must contain at least 2 bytes
 
@@ -25,7 +61,7 @@ namespace TestConsole
             compressedBytes.Add(data[0]);
             byte previousByte = data[0];
 
-            for (int i = 1; i < data.Length; i+=2)
+            for (int i = 1; i < data.Length; i += 2)
             {
                 int temp;
                 byte deltaIndex, deltaValue;
@@ -39,9 +75,9 @@ namespace TestConsole
                 // store delta index
                 compressedDelta = (byte)(deltaIndex << 4);
 
-                if (i < data.Length-1)
+                if (i < data.Length - 1)
                 {
-                    (deltaIndex, deltaValue) = _deltaStrategy.QuantiseDeltaToIndex(previousByte, data[i+1]);
+                    (deltaIndex, deltaValue) = _deltaStrategy.QuantiseDeltaToIndex(previousByte, data[i + 1]);
 
                     // clamp value to min,max of sbyte value
                     temp = (sbyte)previousByte + (sbyte)deltaValue;
@@ -55,7 +91,7 @@ namespace TestConsole
 
             }
 
-            return compressedBytes.ToArray();
+            return (compressedBytes.ToArray(), data.Length);
 
         }
 
